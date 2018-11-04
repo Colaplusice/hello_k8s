@@ -123,7 +123,6 @@ service是以Pods为原子的单位的，可能横跨多个node
 - kubectl config delete-cluster
 - kubectl config delete-context
 - kubectl rename-context
-- 
 - kubectl expose deployment hello-node --type=LoadBalancer -—name=name  根据pod创建外部服务，同时制定name
 - kubectl get services  得到服务信息
 - kubectl get services -l <label_name>
@@ -142,17 +141,43 @@ service是以Pods为原子的单位的，可能横跨多个node
 - kubectl delete pods redis  删除pods
 - kubectl delete secret mysql-pass  删除密码
 
+## Ingress 外部ip
 
-
-
-
-
-
-## 外部ip
+ingress可以给service提供集群外部访问的URL,负载均衡，SSL终止，HTTP路由。
 LoadBalancer Ingress 来设置外部ip
 
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: test-ingress
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /testpath
+        backend:
+          serviceName: test
+          servicePort: 80
+      - path: /happypath
+        backend:
+          serviceName: happy
+          servicePort: 80
+将testpath路径的路由转向 test service的80端口
+
+
 ## namespace
+
 namespace 是对一组资源和对象的抽象集合，pods,services,replication controllers,deployments 都属于某一个namespace,默认为default
+
+## DaemonSet
+
+daemonset 保证在每个node上运行一个容器副本，常用来部署集群日志，监控等。
+日志收集，比如fluentd，logstash等
+系统监控，比如Prometheus Node Exporter，collectd，New Relic agent，Ganglia gmond等
+系统程序，比如kube-proxy, kube-dns, glusterd, ceph等
+在yaml 创建时， kind: DaemonSet
+
+
 
 Minikube使得服务可用
 - minikube service hello-node
@@ -164,18 +189,20 @@ Minikube使得服务可用
 - minikube service hello-node  运行服务
 - minikube service wordpress --url  运行服务以及url
 
-
 ## Addone
+
 - minikube addons list   查看插件的List
 - minikube addons enable heapster 激活一个插件
 - minikube addons open heapster    打开插件
 
-
 ## raplicationController
-	通过模板来创建Pods
-   复活pod,管理副本，负责副本的创建和运行。
+
+通过模板来创建Pods
+复活pod,管理副本，负责副本的创建和运行。
  
+
 ## kubernetes proxy
+
 负责为pod创建代理服务，从k8s api获取所有的服务， 从service到pods的请求转发，实现了 虚拟网络，
 service通过 proxy 进行转发。
 
@@ -184,12 +211,14 @@ service通过 proxy 进行转发。
 
 
 ## deployments
+
 为pods以及raplicationset提供一个声明式的定义方法，应用场景有
 - 定义deployment
 应该是把pod部署的结果
 想当于一个pod的模板
 
 ## 删除
+
 - kubectl delete service hello-node  删除service
 - kubectl delete deployment hello-node 删除部署 删除所有的pods
 - docker rmi hello-node:v1 hello-node:v2 -f 删除docker 镜像
@@ -197,32 +226,28 @@ service通过 proxy 进行转发。
 - minikube delete 删除minikube
 
 ## 顺序
+
 创建集群———> 创建应用的docker image  —————> 部署镜像————>创建服务
 
 
 ## 集群
+
 - kubectl cluster-info
 - kubectl get nodes
-- kubectl run kubernetes-bootcamp --image=gcr.io/google-samples/kubernetes-bootcamp:v1--port=808  从官方镜像运行
-- 
-
+- kubectl run kubernetes-bootcamp --image=gcr.io/google-samples/kubernetes-bootcamp:v1--port=808  从官方镜像运行 
 
 ## scale
+
 多个instance的使用
+
 - kubectl scale deployments/kubernets-bootcamp —replicas=4     部署4个Instance
 - kubectl scale deployments/kubernets-bootcamp —replicas=2    由4个下降到两个
 
 
-
 ## 滚动更新  update
+
 - kubectl rollout status deployments/kubernetes-bootcamp  检查是否更新成功  后面接Pod的label
 - rollback 取消更新  kebectl rollout undo deployments/kubernetes-bootcamp
-- 
-
-
-
-
-
 
 ## 配权限
 openssl genrsa -out icecola.key 2048
@@ -265,6 +290,7 @@ kubectl create -f /pods/config/redis-config.yaml
 - kubectl get statefulset web  得到有状态的web
 - kubectl get secrets 得到秘钥信息
 - kubectl get pvc 得到持久化数据信息
+- kubectl get ing 得到ingress信息
 - kubectl delete pvc -l app=wordpress 删除pvc数据
 
 ## ReplicaSet
@@ -319,9 +345,13 @@ kubernetes.io/dockerconfigjson： 用来存储私有docker registry的认证信�
 Opaque：base64  编码格式的  用来储存密码，秘钥
 Service Account： 用来访问Kubernetes API，由Kubernetes自动创建，并且会自动挂载到Pod，的/run/secrets/kubernetes.io/serviceaccount目录中
 
-## 问题解决
+## bug问题解决
 
 The connection to the server <server-name:port> was refused - did you specify the right host or port?  没有安装minikube
+
+Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
+rm ~/.minikube/machines/minikube/hyperkit.pid
+
 
 # docker——machine安装
 

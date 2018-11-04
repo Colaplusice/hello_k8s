@@ -21,9 +21,9 @@ spec:
       name: config
   volumes:
     - name: data
-    emptyDir: {}
+      emptyDir: {}
     - name: config
-    configMap:
+  configMap:
       name: example-redis-config
       items:
       - key: redis-config
