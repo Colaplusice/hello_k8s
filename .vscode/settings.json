@@ -1,8 +1,0 @@
-{
-    "editor.fontSize": 10,
-    "terminal.integrated.fontSize": 10,
-    "mssql.resultsFontSize": 10,
-    "scm.diffDecorationsGutterWidth": 2,
-    "editor.minimap.maxColumn": 80,
-    "editor.fontWeight": "100"
-}
