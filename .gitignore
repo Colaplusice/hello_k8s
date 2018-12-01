@@ -210,3 +210,6 @@ tmp
 .idea
 app/play
 .vscode
+icecola.key
+it-icecola.crt
+douya-fanjialiang.csr
