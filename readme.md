@@ -5,6 +5,8 @@ brew install kubernetes-cli
 ## 查看k8s的配置文件
 
 kubectl cluster-info
+object
+每个object有两个嵌套的fields, obejct spec object status, spec表明了你想让object有哪些属性，staus表明了object的状态。
 
 ## bash的安装位置
 
@@ -23,10 +25,13 @@ brew cask install minikube
 docker images
 开始集群
 minikube start --vm-driver=hyperkit
+minikube start --vm-driver=xhyve
 kubectl config use-context minikube  切换上下文
 
 kubectl cluster-info 查看集群信息
 minikube dashboard   在浏览器打开
+重新配置 minikube stop; minikube delete; sudo rm -rf ~/.minikube; sudo rm -rf ~/.kub
+
 
 ## 创建dockerfile
 
@@ -78,7 +83,20 @@ kubectl delete deploy $DEPLOY_NAME
 
 ## node的概念
 
-node是pod运行的真正主机，可以是物理机，虚拟机。 为了管理Pod,每个Node上至少要运行container runtime  每个Node 归master调度。node 上必须有的东西 。
+node是pod运行的真正主机，可以是物理机，虚拟机。 为了管理Pod,每个Node上至少要运行container 
+runtime  每个Node 归master调度。node 上必须有的东西 。
+每个node上都必须有kube-proxy来对service的地址和真实地址进行转换，每个service都会在node上随机选择一个port，然后kube-proxy接收到后，将请求转发到service的pod上，通过轮询选择pod的方式。
+kube-proxy的模式:
+1. iptables 随机选择pods,安装iptables,
+2. ipvs 通过调用netlink接口来创建ipv的规则，周期性的同步ipv rules和kubernets的service来确保Ipvs的status是长久的。负载均衡的算法有：
+- rr round-robin
+- lc: least connection
+- dh: destination hashing
+- sh: source hashing
+- sed: shortest expected delay
+- nq: never queue
+- 
+
 
 - Kubelet   负责和master节点进行通讯。
 - 容器
@@ -91,10 +109,51 @@ service 是一个抽象上的概念，定义了一系列pods和一个连接这�
 - NodePort 所有被选择的Node都expose在一个相同的端口上，通过网络地址转换协议。让service可连接到集群外部使用<NodeIP>:<NodePort>,是一个集群ip的超集。
 - LoadBalancer 创建一个外部的loadBalancer在当前的云上，为服务指定一个external Ip，是nodePort的超集。
 - ExternalName   开放服务通过一个任意的name(通过serviceSpec中的externalName指定),需要 v1.7以上的kube-dns
+service在三种情况下不定义selector
 
+- You want to have an external database cluster in production, but in test you use your own databases.
+- You want to point your service to a service in another Namespace or on another cluster.
+- You are migrating your workload to Kubernetes and some of your backends run outside of Kubernetes.
+
+可以指定service的ip和端口
+kind: Endpoints
+apiVersion: v1
+metadata:
+  name: my-service
+subsets:
+  - addresses:
+      - ip: 1.2.3.4
+    ports:
+      - port: 9376
+service 指定多个Port
+```
+kind: Service
+apiVersion: v1
+metadata:
+  name: my-service
+spec:
+  selector:
+    app: MyApp
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 9376
+  - name: https
+    protocol: TCP
+    port: 443
+    targetPort: 9377
+```
+
+service的环境变量配置
+REDIS_MASTER_SERVICE_HOST=10.0.0.11
+
+service的dns配置
+dns-server观察着kubernates的api,来创造解析记录。比如有个service--myservice,有个namespace取名为my-ns.my-service.my-ns就被创建了。 pods会被轻松的查找到通过找my-service
 ### labelselector
 
 如果服务不指定selector的话，可以手动的指定service在一个给定的节点上。还有一个原因是你在用 type:externalName
+selector 决定了 deployment是如何找到你的
 
 想法:
 service是以Pods为原子的单位的，可能横跨多个node
@@ -167,7 +226,7 @@ spec:
 
 ## namespace
 
-namespace 是对一组资源和对象的抽象集合，pods,services,replication controllers,deployments 都属于某一个namespace,默认为default
+namespace 是对一组资源和对象的抽象集合，pods,services,replication controllers,deployments 都属于某一个namespace,默认为default。可以切换namespace来使用不同的集群
 
 ## DaemonSet
 
@@ -212,10 +271,32 @@ service通过 proxy 进行转发。
 
 ## deployments
 
-为pods以及raplicationset提供一个声明式的定义方法，应用场景有
-- 定义deployment
+为pods以及raplicationset提供一个声明式的定义方法，是一组Pods的集合，可以根据replica的设定来自动管理pods的数量，少了就增加。
+
+### 定义deployment
 应该是把pod部署的结果
 想当于一个pod的模板
+
+### template
+
+```
+template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.15.4
+        ports:
+        - containerPort: 80
+```
+和selector以及 replicas同级，决定了一些事情：
+1. app 命名
+2. spec 决定了container pod的containers的一些内容: 容器的来源，容器的版本 容器的port
+3. 
+
+
 
 ## 删除
 
@@ -242,7 +323,7 @@ service通过 proxy 进行转发。
 
 - kubectl scale deployments/kubernets-bootcamp —replicas=4     部署4个Instance
 - kubectl scale deployments/kubernets-bootcamp —replicas=2    由4个下降到两个
-
+-  kubectl autoscale deployment/my-nginx --min=1 --max=3 自动的调节
 
 ## 滚动更新  update
 
@@ -295,6 +376,7 @@ kubectl create -f /pods/config/redis-config.yaml
 
 ## ReplicaSet
 
+来创建Pod的诞生，死亡
 下一代复本控制器， ReplicaSet支持集合selector,(version 1.0,version 2.0)
 
 ## stateful app
@@ -352,6 +434,11 @@ The connection to the server <server-name:port> was refused - did you specify th
 Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
 rm ~/.minikube/machines/minikube/hyperkit.pid
 
+minikube dashboard 503
+
+卸载virtualbox, 安装hyperkit
+brew install --HEAD xhyve
+
 
 # docker——machine安装
 
@@ -364,3 +451,15 @@ sudo chmod u+s /usr/local/bin/docker-machine-driver-hyperkit
 
 国内镜像
 minikube start --registry-mirror=https://registry.docker-cn.com
+
+
+
+## TASKS
+
+minikube addons enable metrics-server
+
+kubectl create namespace mem-example
+
+kubectl create -f memory-resource-limit.yaml
+
+tier 应该是前端和后端的依赖。
