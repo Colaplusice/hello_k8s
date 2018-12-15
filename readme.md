@@ -81,6 +81,11 @@ pods的生命周期:
 删除deployemnt即可。
 kubectl delete deploy $DEPLOY_NAME
 
+### podname
+
+打印podname
+kubectl get pods -o go-template --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}'
+
 ## node的概念
 
 node是pod运行的真正主机，可以是物理机，虚拟机。 为了管理Pod,每个Node上至少要运行container 
@@ -191,7 +196,7 @@ service是以Pods为原子的单位的，可能横跨多个node
 - kubectl get  pods list sources  列出资源
 - kubectl describe pods 一个资源的详细信息
 - kubectl logs  打印出一个pod中container的信息  可选参数 -f
-- kubectl exec  执行命令 在一个pod中的容器上
+- kubectl exec 执行命令 在一个pod中的容器上
 - kubectl exec $POD_NAME env 得到pod的环境变量
 - kubectl exec -ti $pod_name bash  进入pods的terminal
 - kubectl get replicasets 得到复制本的信息
@@ -226,7 +231,20 @@ spec:
 
 ## namespace
 
-namespace 是对一组资源和对象的抽象集合，pods,services,replication controllers,deployments 都属于某一个namespace,默认为default。可以切换namespace来使用不同的集群
+namespace是抽象多个虚拟集群在一个物理集群上，如果有多个组使用同一个集群时，比如豆芽组的集群时douya
+namespace 是对一组资源和对象的抽象集合，pods,services,replication controllers,deployments 都属于某一个
+namespace,默认为default。可以切换namespace来使用不同的集群
+切换namespace  kubectl config set-context $(kubectl config current-context) --namespace=douya
+删除namespace kubectl delete namespaces
+
+## context
+
+连接多个k8s集群 在$home/.kube 中的文件进行配置
+每个context想当于一个k8s集群。有三个property: cluster, user, namespace
+kcuc: kubectl use-context minikube 切换到minikube集群
+可以在本地连接多个不同的集群，没有空间的限制
+
+
 
 ## DaemonSet
 
@@ -323,7 +341,7 @@ template:
 
 - kubectl scale deployments/kubernets-bootcamp —replicas=4     部署4个Instance
 - kubectl scale deployments/kubernets-bootcamp —replicas=2    由4个下降到两个
--  kubectl autoscale deployment/my-nginx --min=1 --max=3 自动的调节
+- kubectl autoscale deployment/my-nginx --min=1 --max=3 自动的调节
 
 ## 滚动更新  update
 
@@ -351,6 +369,8 @@ kubectl get configmap example-redis-config -o yaml
 ### 通过yaml来创建服务
 在kind 中声明，有deployment,service,pod
 设置挂载点，使用path将redis-config 配置到redis.conf
+      
+      
       - key: redis-config
         path: redis.conf
 
@@ -380,12 +400,14 @@ kubectl create -f /pods/config/redis-config.yaml
 下一代复本控制器， ReplicaSet支持集合selector,(version 1.0,version 2.0)
 
 ## stateful app
+
 配置wordpress
 创建service
 kubectl create -f web.yaml
 kubectl get pods -w -l app=nginx
 
 ### 创建secret
+
 kubectl create secret generic mysql-pass --from-literal=password=newpass
 
 创建service
