@@ -241,10 +241,8 @@ namespace,默认为default。可以切换namespace来使用不同的集群
 
 连接多个k8s集群 在$home/.kube 中的文件进行配置
 每个context想当于一个k8s集群。有三个property: cluster, user, namespace
-kcuc: kubectl use-context minikube 切换到minikube集群
+kcuc: kubectl config use-context minikube 切换到minikube集群
 可以在本地连接多个不同的集群，没有空间的限制
-
-
 
 ## DaemonSet
 
@@ -445,6 +443,13 @@ spec:
 ## secret
 
 解决密码，秘钥等私密问题
+创建秘钥: 
+```
+# Create files needed for rest of example.
+$ echo -n 'admin' > ./username.txt
+$ echo -n '1f2d1e2e67df' > ./password.txt
+kubectl create secret generic db-user-pass --from-file=./username.txt --from-file=./password.txt
+```
 kubernetes.io/dockerconfigjson： 用来存储私有docker registry的认证信息
 Opaque：base64  编码格式的  用来储存密码，秘钥
 Service Account： 用来访问Kubernetes API，由Kubernetes自动创建，并且会自动挂载到Pod，的/run/secrets/kubernetes.io/serviceaccount目录中

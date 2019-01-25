@@ -1,4 +1,4 @@
-## CI/CD use minikube
+# CI/CD use minikube
 
 - 清空环境 minikube stop; minikube delete; sudo rm -rf ~/.minikube; sudo rm -rf ~/.kub
 - 启动 minikube start --memory 4000 --cpus 2 --kubernetes-version v1.6.0
@@ -20,8 +20,7 @@ kubectl rollout status deployments/registry
 minikube service registry-ui​​
 
 修改下index.html文件，然后本地打镜像，上传到自己的镜像服务器
-docker build -t 127.0.0.1:30400/hello-kenzan:latest -f 
- applications/hello-kenzan/Dockerfile applications/hello-kenzan
+docker build -t 127.0.0.1:30400/hello-kenzan:latest -f  applications/hello-kenzan/Dockerfile applications/hello-kenzan
 
 建造代理镜像
  docker build -t socat-registry -f applications/socat/Dockerfile applications/socat
@@ -46,7 +45,7 @@ kubectl delete service hello-kenzan
 kubectl delete deployment hello-kenzan
 minikube stop
 
-# 第二步
+## 第二步
 
 build jenkins
 docker build -t 127.0.0.1:30400/jenkins:latest -f applications/jenkins/Dockerfile applications/jenkins
